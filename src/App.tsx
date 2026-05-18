@@ -79,38 +79,38 @@ const DEFAULT_CONFIG: SiteConfig = {
   footerTraffic: '',
   footerTeams: '',
   tools: {
-    compress: { name: 'Compress PDF', description: 'Reduce file size while keeping best quality', stats: '269M USERS/MO' },
-    merge: { name: 'Merge PDF', description: 'Combine multiple PDFs into one easily', stats: '180M USERS/MO' },
-    'pdf-to-word': { name: 'PDF to Word', description: 'Convert PDF files to editable Word docs', stats: '120M USERS/MO' },
-    editor: { name: 'PDF Editor', description: 'Edit text, add images, and annotate online', stats: '80M USERS/MO' },
-    'word-to-pdf': { name: 'Word to PDF', description: 'Convert DOCX files to PDF instantly', stats: '95M USERS/MO' },
-    split: { name: 'Split PDF', description: 'Extract one or multiple pages from PDF', stats: '60M USERS/MO' },
-    'pdf-to-jpg': { name: 'PDF to JPG', description: 'Convert each PDF page into an image', stats: '55M USERS/MO' },
-    unlock: { name: 'Unlock PDF', description: 'Remove passwords from protected files', stats: '25M USERS/MO' },
-    sign: { name: 'Sign PDF', description: 'Add your e-signature or request signatures', stats: '40M USERS/MO' },
-    rotate: { name: 'Rotate PDF', description: 'Fix orientation of PDF pages easily', stats: '30M USERS/MO' },
-    watermark: { name: 'Watermark', description: 'Stamp image or text over your PDF', stats: '15M USERS/MO' },
-    lock: { name: 'Lock PDF', description: 'Protect PDF with a password', stats: '20M USERS/MO' },
-    'remove-watermark': { name: 'Remove Watermark', description: 'Remove transparent text or images', stats: '12M USERS/MO' },
-    'pdf-to-text': { name: 'PDF to Text', description: 'Extract all text content from PDF to a TXT file', stats: '45M USERS/MO' },
+    compress: { name: 'Compress PDF', description: 'Reduce file size while keeping best quality' },
+    merge: { name: 'Merge PDF', description: 'Combine multiple PDFs into one easily' },
+    'pdf-to-word': { name: 'PDF to Word', description: 'Convert PDF files to editable Word docs' },
+    editor: { name: 'PDF Editor', description: 'Edit text, add images, and annotate online' },
+    'word-to-pdf': { name: 'Word to PDF', description: 'Convert DOCX files to PDF instantly' },
+    split: { name: 'Split PDF', description: 'Extract one or multiple pages from PDF' },
+    'pdf-to-jpg': { name: 'PDF to JPG', description: 'Convert each PDF page into an image' },
+    unlock: { name: 'Unlock PDF', description: 'Remove passwords from protected files' },
+    sign: { name: 'Sign PDF', description: 'Add your e-signature or request signatures' },
+    rotate: { name: 'Rotate PDF', description: 'Fix orientation of PDF pages easily' },
+    watermark: { name: 'Watermark', description: 'Stamp image or text over your PDF' },
+    lock: { name: 'Lock PDF', description: 'Protect PDF with a password' },
+    'remove-watermark': { name: 'Remove Watermark', description: 'Remove transparent text or images' },
+    'pdf-to-text': { name: 'PDF to Text', description: 'Extract all text content from PDF to a TXT file' },
   }
 };
 
 const TOOLS: Tool[] = [
-  { id: 'compress', name: 'Compress PDF', description: 'Reduce file size while keeping best quality', traffic: 'popular', stats: '269M USERS/MO', icon: Minimize2, keywords: ['compress pdf free'], color: 'bg-orange-600', hoverBorder: 'hover:border-orange-400', iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
-  { id: 'merge', name: 'Merge PDF', description: 'Combine multiple PDFs into one easily', traffic: 'popular', stats: '180M USERS/MO', icon: Merge, keywords: ['merge pdf'], color: 'bg-blue-600', hoverBorder: 'hover:border-blue-400', iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
-  { id: 'pdf-to-word', name: 'PDF to Word', description: 'Convert PDF files to editable Word docs', traffic: 'popular', stats: '120M USERS/MO', icon: FileText, keywords: ['pdf to word'], color: 'bg-indigo-600', hoverBorder: 'hover:border-indigo-400', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
-  { id: 'editor', name: 'PDF Editor', description: 'Edit text, add images, and annotate online', traffic: 'popular', stats: '80M USERS/MO', icon: TypeIcon, keywords: ['edit pdf'], color: 'bg-purple-600', hoverBorder: 'hover:border-purple-400', iconBg: 'bg-purple-100', iconColor: 'text-purple-600' },
-  { id: 'word-to-pdf', name: 'Word to PDF', description: 'Convert DOCX files to PDF instantly', stats: '95M USERS/MO', icon: ArrowRightLeft, keywords: ['word to pdf'], color: 'bg-emerald-600', hoverBorder: 'hover:border-emerald-400', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
-  { id: 'split', name: 'Split PDF', description: 'Extract one or multiple pages from PDF', stats: '60M USERS/MO', icon: Split, keywords: ['split pdf'], color: 'bg-cyan-600', hoverBorder: 'hover:border-cyan-400', iconBg: 'bg-cyan-100', iconColor: 'text-cyan-600' },
-  { id: 'pdf-to-jpg', name: 'PDF to JPG', description: 'Convert each PDF page into an image', stats: '55M USERS/MO', icon: FileImage, keywords: ['pdf to jpg'], color: 'bg-pink-600', hoverBorder: 'hover:border-pink-400', iconBg: 'bg-pink-100', iconColor: 'text-pink-600' },
-  { id: 'unlock', name: 'Unlock PDF', description: 'Remove passwords from protected files', stats: '25M USERS/MO', icon: Lock, keywords: ['remove password'], color: 'bg-rose-600', hoverBorder: 'hover:border-rose-400', iconBg: 'bg-rose-100', iconColor: 'text-rose-600' },
-  { id: 'sign', name: 'Sign PDF', description: 'Add your e-signature or request signatures', stats: '40M USERS/MO', icon: PenTool, keywords: ['sign pdf'], color: 'bg-amber-600', hoverBorder: 'hover:border-amber-400', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
-  { id: 'rotate', name: 'Rotate PDF', description: 'Fix orientation of PDF pages easily', stats: '30M USERS/MO', icon: RotateCw, keywords: ['rotate pdf'], color: 'bg-slate-600', hoverBorder: 'hover:border-slate-400', iconBg: 'bg-slate-100', iconColor: 'text-slate-600' },
-  { id: 'watermark', name: 'Watermark', description: 'Stamp image or text over your PDF', stats: '15M USERS/MO', icon: Layers, keywords: ['watermark'], color: 'bg-red-600', hoverBorder: 'hover:border-red-400', iconBg: 'bg-red-100', iconColor: 'text-red-600' },
-  { id: 'lock', name: 'Lock PDF', description: 'Protect PDF with a password', stats: '20M USERS/MO', icon: Lock, keywords: ['secure pdf'], color: 'bg-slate-800', hoverBorder: 'hover:border-slate-600', iconBg: 'bg-slate-200', iconColor: 'text-slate-800' },
-  { id: 'remove-watermark', name: 'Remove Watermark', description: 'Remove transparent text or images', stats: '12M USERS/MO', icon: Minimize2, keywords: ['clean watermark'], color: 'bg-cyan-700', hoverBorder: 'hover:border-cyan-500', iconBg: 'bg-cyan-100', iconColor: 'text-cyan-700' },
-  { id: 'pdf-to-text', name: 'PDF to Text', description: 'Extract all text content from PDF to a TXT file', traffic: 'rising', stats: '45M USERS/MO', icon: FileText, keywords: ['pdf to text', 'extract text'], color: 'bg-teal-600', hoverBorder: 'hover:border-teal-400', iconBg: 'bg-teal-100', iconColor: 'text-teal-600' },
+  { id: 'compress', name: 'Compress PDF', description: 'Reduce file size while keeping best quality', traffic: 'popular', icon: Minimize2, keywords: ['compress pdf free'], color: 'bg-orange-600', hoverBorder: 'hover:border-orange-400', iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
+  { id: 'merge', name: 'Merge PDF', description: 'Combine multiple PDFs into one easily', traffic: 'popular', icon: Merge, keywords: ['merge pdf'], color: 'bg-blue-600', hoverBorder: 'hover:border-blue-400', iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
+  { id: 'pdf-to-word', name: 'PDF to Word', description: 'Convert PDF files to editable Word docs', traffic: 'popular', icon: FileText, keywords: ['pdf to word'], color: 'bg-indigo-600', hoverBorder: 'hover:border-indigo-400', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
+  { id: 'editor', name: 'PDF Editor', description: 'Edit text, add images, and annotate online', traffic: 'popular', icon: TypeIcon, keywords: ['edit pdf'], color: 'bg-purple-600', hoverBorder: 'hover:border-purple-400', iconBg: 'bg-purple-100', iconColor: 'text-purple-600' },
+  { id: 'word-to-pdf', name: 'Word to PDF', description: 'Convert DOCX files to PDF instantly', icon: ArrowRightLeft, keywords: ['word to pdf'], color: 'bg-emerald-600', hoverBorder: 'hover:border-emerald-400', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
+  { id: 'split', name: 'Split PDF', description: 'Extract one or multiple pages from PDF', icon: Split, keywords: ['split pdf'], color: 'bg-cyan-600', hoverBorder: 'hover:border-cyan-400', iconBg: 'bg-cyan-100', iconColor: 'text-cyan-600' },
+  { id: 'pdf-to-jpg', name: 'PDF to JPG', description: 'Convert each PDF page into an image', icon: FileImage, keywords: ['pdf to jpg'], color: 'bg-pink-600', hoverBorder: 'hover:border-pink-400', iconBg: 'bg-pink-100', iconColor: 'text-pink-600' },
+  { id: 'unlock', name: 'Unlock PDF', description: 'Remove passwords from protected files', icon: Lock, keywords: ['remove password'], color: 'bg-rose-600', hoverBorder: 'hover:border-rose-400', iconBg: 'bg-rose-100', iconColor: 'text-rose-600' },
+  { id: 'sign', name: 'Sign PDF', description: 'Add your e-signature or request signatures', icon: PenTool, keywords: ['sign pdf'], color: 'bg-amber-600', hoverBorder: 'hover:border-amber-400', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
+  { id: 'rotate', name: 'Rotate PDF', description: 'Fix orientation of PDF pages easily', icon: RotateCw, keywords: ['rotate pdf'], color: 'bg-slate-600', hoverBorder: 'hover:border-slate-400', iconBg: 'bg-slate-100', iconColor: 'text-slate-600' },
+  { id: 'watermark', name: 'Watermark', description: 'Stamp image or text over your PDF', icon: Layers, keywords: ['watermark'], color: 'bg-red-600', hoverBorder: 'hover:border-red-400', iconBg: 'bg-red-100', iconColor: 'text-red-600' },
+  { id: 'lock', name: 'Lock PDF', description: 'Protect PDF with a password', icon: Lock, keywords: ['secure pdf'], color: 'bg-slate-800', hoverBorder: 'hover:border-slate-600', iconBg: 'bg-slate-200', iconColor: 'text-slate-800' },
+  { id: 'remove-watermark', name: 'Remove Watermark', description: 'Remove transparent text or images', icon: Minimize2, keywords: ['clean watermark'], color: 'bg-cyan-700', hoverBorder: 'hover:border-cyan-500', iconBg: 'bg-cyan-100', iconColor: 'text-cyan-700' },
+  { id: 'pdf-to-text', name: 'PDF to Text', description: 'Extract all text content from PDF to a TXT file', traffic: 'rising', icon: FileText, keywords: ['pdf to text', 'extract text'], color: 'bg-teal-600', hoverBorder: 'hover:border-teal-400', iconBg: 'bg-teal-100', iconColor: 'text-teal-600' },
 ];
 
 export default function App() {
@@ -361,7 +361,7 @@ const ToolCard: React.FC<{
       </div>
 
       <div className="text-[11px] font-bold text-slate-400 mt-4 uppercase tracking-tight">
-        {toolOverride?.stats || tool.stats || 'FAVORITE TOOL'}
+        FREE PDF TOOL
       </div>
     </motion.button>
   );
