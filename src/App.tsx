@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileText, 
   Merge, 
@@ -6,7 +6,8 @@ import {
   Minimize2, 
   RotateCw, 
   FileImage, 
-  Type, 
+  Image as ImageIcon,
+  Type as TypeIcon, 
   Lock, 
   PenTool, 
   Layers, 
@@ -14,7 +15,13 @@ import {
   ChevronLeft,
   Upload,
   Download,
-  AlertCircle
+  AlertCircle,
+  Square,
+  Trash2,
+  Palette,
+  Maximize,
+  Move,
+  Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
@@ -23,7 +30,7 @@ import { cn } from './lib/utils';
 type ToolId = 
   | 'compress' | 'merge' | 'pdf-to-word' | 'word-to-pdf' 
   | 'split' | 'pdf-to-jpg' | 'rotate' | 'editor' 
-  | 'unlock' | 'sign' | 'watermark';
+  | 'unlock' | 'lock' | 'remove-watermark' | 'sign' | 'watermark' | 'pdf-to-text';
 
 interface Tool {
   id: ToolId;
@@ -40,152 +47,292 @@ interface Tool {
   iconColor: string;
 }
 
+interface SiteConfig {
+  brandName: string;
+  brandAccent: string;
+  primaryColor: string;
+  borderRadius: string; // 'none', 'md', 'xl', '3xl'
+  shadowStrength: 'none' | 'sm' | 'md' | 'lg' | 'xl';
+  fontScale: number; // multiplier
+  headerSticky: boolean;
+  heroTitle: string;
+  heroSubtitle: string;
+  heroButton: string;
+  headerButton: string;
+  tools: Record<ToolId, { name: string; description: string; stats?: string }>;
+  footerTraffic: string;
+  footerTeams: string;
+}
+
+const DEFAULT_CONFIG: SiteConfig = {
+  brandName: '',
+  brandAccent: '',
+  primaryColor: '#4f46e5', // indigo-600
+  borderRadius: '1.5rem', // 24px/3xl
+  shadowStrength: 'xl',
+  fontScale: 1,
+  headerSticky: true,
+  heroTitle: "The World's Favorite PDF Tool",
+  heroSubtitle: 'Quick, secure, and completely online. Join over 800 million users monthly.',
+  heroButton: '',
+  headerButton: '',
+  footerTraffic: '',
+  footerTeams: '',
+  tools: {
+    compress: { name: 'Compress PDF', description: 'Reduce file size while keeping best quality', stats: '269M USERS/MO' },
+    merge: { name: 'Merge PDF', description: 'Combine multiple PDFs into one easily', stats: '180M USERS/MO' },
+    'pdf-to-word': { name: 'PDF to Word', description: 'Convert PDF files to editable Word docs', stats: '120M USERS/MO' },
+    editor: { name: 'PDF Editor', description: 'Edit text, add images, and annotate online', stats: '80M USERS/MO' },
+    'word-to-pdf': { name: 'Word to PDF', description: 'Convert DOCX files to PDF instantly', stats: '95M USERS/MO' },
+    split: { name: 'Split PDF', description: 'Extract one or multiple pages from PDF', stats: '60M USERS/MO' },
+    'pdf-to-jpg': { name: 'PDF to JPG', description: 'Convert each PDF page into an image', stats: '55M USERS/MO' },
+    unlock: { name: 'Unlock PDF', description: 'Remove passwords from protected files', stats: '25M USERS/MO' },
+    sign: { name: 'Sign PDF', description: 'Add your e-signature or request signatures', stats: '40M USERS/MO' },
+    rotate: { name: 'Rotate PDF', description: 'Fix orientation of PDF pages easily', stats: '30M USERS/MO' },
+    watermark: { name: 'Watermark', description: 'Stamp image or text over your PDF', stats: '15M USERS/MO' },
+    lock: { name: 'Lock PDF', description: 'Protect PDF with a password', stats: '20M USERS/MO' },
+    'remove-watermark': { name: 'Remove Watermark', description: 'Remove transparent text or images', stats: '12M USERS/MO' },
+    'pdf-to-text': { name: 'PDF to Text', description: 'Extract all text content from PDF to a TXT file', stats: '45M USERS/MO' },
+  }
+};
+
 const TOOLS: Tool[] = [
-  { id: 'compress', name: 'Compress PDF', description: 'Reduce file size while keeping best quality', traffic: 'popular', difficulty: 'easy', stats: '269M USERS/MO', icon: Minimize2, keywords: ['compress pdf free'], color: 'bg-orange-600', hoverBorder: 'hover:border-orange-400', iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
-  { id: 'merge', name: 'Merge PDF', description: 'Combine multiple PDFs into one easily', traffic: 'popular', difficulty: 'easy', stats: '180M USERS/MO', icon: Merge, keywords: ['merge pdf'], color: 'bg-blue-600', hoverBorder: 'hover:border-blue-400', iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
-  { id: 'pdf-to-word', name: 'PDF to Word', description: 'Convert PDF files to editable Word docs', traffic: 'popular', difficulty: 'normal', stats: '120M USERS/MO', icon: FileText, keywords: ['pdf to word'], color: 'bg-indigo-600', hoverBorder: 'hover:border-indigo-400', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
-  { id: 'editor', name: 'PDF Editor', description: 'Edit text, add images, and annotate online', traffic: 'popular', stats: '80M USERS/MO', icon: Type, keywords: ['edit pdf'], color: 'bg-purple-600', hoverBorder: 'hover:border-purple-400', iconBg: 'bg-purple-100', iconColor: 'text-purple-600' },
-  { id: 'word-to-pdf', name: 'Word to PDF', description: 'Make DOC files easy to read by converting', difficulty: 'easy', stats: '95M USERS/MO', icon: ArrowRightLeft, keywords: ['word to pdf'], color: 'bg-emerald-600', hoverBorder: 'hover:border-emerald-400', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
-  { id: 'split', name: 'Split PDF', description: 'Extract one or multiple pages from PDF', difficulty: 'easy', stats: '60M USERS/MO', icon: Split, keywords: ['split pdf'], color: 'bg-cyan-600', hoverBorder: 'hover:border-cyan-400', iconBg: 'bg-cyan-100', iconColor: 'text-cyan-600' },
-  { id: 'pdf-to-jpg', name: 'PDF to JPG', description: 'Convert each PDF page into an image', difficulty: 'easy', stats: '55M USERS/MO', icon: FileImage, keywords: ['pdf to jpg'], color: 'bg-pink-600', hoverBorder: 'hover:border-pink-400', iconBg: 'bg-pink-100', iconColor: 'text-pink-600' },
-  { id: 'unlock', name: 'Unlock PDF', description: 'Remove passwords from protected files', traffic: 'niche', stats: '25M USERS/MO', icon: Lock, keywords: ['remove password'], color: 'bg-rose-600', hoverBorder: 'hover:border-rose-400', iconBg: 'bg-rose-100', iconColor: 'text-rose-600' },
-  { id: 'sign', name: 'Sign PDF', description: 'Add your e-signature or request signatures', traffic: 'rising', stats: '40M USERS/MO', icon: PenTool, keywords: ['sign pdf'], color: 'bg-amber-600', hoverBorder: 'hover:border-amber-400', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
-  { id: 'rotate', name: 'Rotate PDF', description: 'Fix orientation of PDF pages easily', difficulty: 'easy', stats: '30M USERS/MO', icon: RotateCw, keywords: ['rotate pdf'], color: 'bg-slate-600', hoverBorder: 'hover:border-slate-400', iconBg: 'bg-slate-100', iconColor: 'text-slate-600' },
+  { id: 'compress', name: 'Compress PDF', description: 'Reduce file size while keeping best quality', traffic: 'popular', stats: '269M USERS/MO', icon: Minimize2, keywords: ['compress pdf free'], color: 'bg-orange-600', hoverBorder: 'hover:border-orange-400', iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
+  { id: 'merge', name: 'Merge PDF', description: 'Combine multiple PDFs into one easily', traffic: 'popular', stats: '180M USERS/MO', icon: Merge, keywords: ['merge pdf'], color: 'bg-blue-600', hoverBorder: 'hover:border-blue-400', iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
+  { id: 'pdf-to-word', name: 'PDF to Word', description: 'Convert PDF files to editable Word docs', traffic: 'popular', stats: '120M USERS/MO', icon: FileText, keywords: ['pdf to word'], color: 'bg-indigo-600', hoverBorder: 'hover:border-indigo-400', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
+  { id: 'editor', name: 'PDF Editor', description: 'Edit text, add images, and annotate online', traffic: 'popular', stats: '80M USERS/MO', icon: TypeIcon, keywords: ['edit pdf'], color: 'bg-purple-600', hoverBorder: 'hover:border-purple-400', iconBg: 'bg-purple-100', iconColor: 'text-purple-600' },
+  { id: 'word-to-pdf', name: 'Word to PDF', description: 'Convert DOCX files to PDF instantly', stats: '95M USERS/MO', icon: ArrowRightLeft, keywords: ['word to pdf'], color: 'bg-emerald-600', hoverBorder: 'hover:border-emerald-400', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
+  { id: 'split', name: 'Split PDF', description: 'Extract one or multiple pages from PDF', stats: '60M USERS/MO', icon: Split, keywords: ['split pdf'], color: 'bg-cyan-600', hoverBorder: 'hover:border-cyan-400', iconBg: 'bg-cyan-100', iconColor: 'text-cyan-600' },
+  { id: 'pdf-to-jpg', name: 'PDF to JPG', description: 'Convert each PDF page into an image', stats: '55M USERS/MO', icon: FileImage, keywords: ['pdf to jpg'], color: 'bg-pink-600', hoverBorder: 'hover:border-pink-400', iconBg: 'bg-pink-100', iconColor: 'text-pink-600' },
+  { id: 'unlock', name: 'Unlock PDF', description: 'Remove passwords from protected files', stats: '25M USERS/MO', icon: Lock, keywords: ['remove password'], color: 'bg-rose-600', hoverBorder: 'hover:border-rose-400', iconBg: 'bg-rose-100', iconColor: 'text-rose-600' },
+  { id: 'sign', name: 'Sign PDF', description: 'Add your e-signature or request signatures', stats: '40M USERS/MO', icon: PenTool, keywords: ['sign pdf'], color: 'bg-amber-600', hoverBorder: 'hover:border-amber-400', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
+  { id: 'rotate', name: 'Rotate PDF', description: 'Fix orientation of PDF pages easily', stats: '30M USERS/MO', icon: RotateCw, keywords: ['rotate pdf'], color: 'bg-slate-600', hoverBorder: 'hover:border-slate-400', iconBg: 'bg-slate-100', iconColor: 'text-slate-600' },
   { id: 'watermark', name: 'Watermark', description: 'Stamp image or text over your PDF', stats: '15M USERS/MO', icon: Layers, keywords: ['watermark'], color: 'bg-red-600', hoverBorder: 'hover:border-red-400', iconBg: 'bg-red-100', iconColor: 'text-red-600' },
+  { id: 'lock', name: 'Lock PDF', description: 'Protect PDF with a password', stats: '20M USERS/MO', icon: Lock, keywords: ['secure pdf'], color: 'bg-slate-800', hoverBorder: 'hover:border-slate-600', iconBg: 'bg-slate-200', iconColor: 'text-slate-800' },
+  { id: 'remove-watermark', name: 'Remove Watermark', description: 'Remove transparent text or images', stats: '12M USERS/MO', icon: Minimize2, keywords: ['clean watermark'], color: 'bg-cyan-700', hoverBorder: 'hover:border-cyan-500', iconBg: 'bg-cyan-100', iconColor: 'text-cyan-700' },
+  { id: 'pdf-to-text', name: 'PDF to Text', description: 'Extract all text content from PDF to a TXT file', traffic: 'rising', stats: '45M USERS/MO', icon: FileText, keywords: ['pdf to text', 'extract text'], color: 'bg-teal-600', hoverBorder: 'hover:border-teal-400', iconBg: 'bg-teal-100', iconColor: 'text-teal-600' },
 ];
 
 export default function App() {
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
+  const [premiumComingSoon, setPremiumComingSoon] = useState(false);
+  const [siteConfig] = useState<SiteConfig>(() => {
+    const saved = localStorage.getItem('siteConfig');
+    return saved ? JSON.parse(saved) : DEFAULT_CONFIG;
+  });
 
-  const selectedTool = TOOLS.find(t => t.id === activeTool);
+  const selectedToolData = activeTool ? siteConfig.tools[activeTool] : null;
+  const toolBaseInfo = TOOLS.find(t => t.id === activeTool);
+
+  const shadowClasses: Record<string, string> = {
+    none: 'shadow-none',
+    sm: 'shadow-sm',
+    md: 'shadow-md',
+    lg: 'shadow-lg',
+    xl: 'shadow-xl',
+  };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-indigo-100 px-8 py-4 flex items-center justify-between shadow-sm">
-        <div 
-          className="flex items-center gap-2 cursor-pointer group" 
-          onClick={() => setActiveTool(null)}
-        >
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl italic group-hover:scale-105 transition-transform">
-            P
-          </div>
-          <span className="text-2xl font-black text-slate-900 tracking-tight">PDF<span className="text-indigo-600 italic">FAST</span></span>
-        </div>
-        
-        <nav className="hidden md:flex items-center gap-8">
-          <a href="#" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Products</a>
-          <a href="#" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Solutions</a>
-          <a href="#" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Pricing</a>
-          <button className="px-5 py-2 bg-indigo-600 text-white rounded-full text-sm font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors">
-            Get Started Free
-          </button>
-        </nav>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 pt-32 pb-12">
-        <AnimatePresence mode="wait">
-          {!activeTool ? (
-            <motion.div 
-              key="dashboard"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="max-w-7xl mx-auto px-8"
-            >
-              <div className="text-center mb-12">
-                <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-2 tracking-tight">
-                  The World's Favorite PDF Tool
-                </h1>
-                <p className="text-slate-500 font-medium text-lg">
-                  Quick, secure, and completely online. Join over 800 million users monthly.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {TOOLS.map((tool) => (
-                  <ToolCard key={tool.id} tool={tool} onClick={() => setActiveTool(tool.id)} />
-                ))}
-                
-                {/* Promotional Card */}
-                <div className="bg-indigo-600 p-5 rounded-2xl shadow-sm flex flex-col justify-between text-white transition-transform hover:-translate-y-1">
-                  <div>
-                    <h3 className="font-bold text-xl mb-1">Pro Version</h3>
-                    <p className="text-xs text-indigo-100 leading-relaxed">Batch processing, OCR, and no file limits.</p>
-                    <ul className="mt-4 space-y-2">
-                      <li className="flex items-center gap-2 text-[10px] font-bold">
-                        <Download size={14} className="text-indigo-300" />
-                        UNLIMITED FILES
-                      </li>
-                      <li className="flex items-center gap-2 text-[10px] font-bold">
-                        <Lock size={14} className="text-indigo-300" />
-                        256-BIT ENCRYPTION
-                      </li>
-                    </ul>
-                  </div>
-                  <button className="w-full py-2 bg-white text-indigo-600 rounded-lg text-sm font-black mt-4 uppercase hover:bg-indigo-50 transition-colors">Go Premium</button>
-                </div>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div 
-              key="workspace"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              className="max-w-4xl mx-auto px-4"
-            >
-              <button 
-                onClick={() => setActiveTool(null)}
-                className="flex items-center gap-2 text-slate-500 hover:text-brand-600 transition-colors mb-6 group"
+    <div 
+      className="min-h-screen flex transition-all duration-300"
+      style={{ 
+        '--primary': siteConfig.primaryColor,
+        '--radius': siteConfig.borderRadius,
+        '--font-scale': siteConfig.fontScale,
+      } as React.CSSProperties}
+    >
+      <div className="flex-1 flex flex-col min-w-0" style={{ '--primary': siteConfig.primaryColor } as React.CSSProperties}>
+        {/* Header */}
+        <header className={cn(
+          "right-0 z-50 bg-white/90 backdrop-blur-md border-b border-indigo-100 px-8 py-4 flex items-center justify-between transition-all duration-300",
+          siteConfig.headerSticky ? "fixed" : "relative",
+          shadowClasses[siteConfig.shadowStrength]
+        )}>
+          <div 
+            className="flex items-center gap-2 cursor-pointer group" 
+            onClick={() => setActiveTool(null)}
+          >
+            {siteConfig.brandName && (
+              <div 
+                style={{ backgroundColor: siteConfig.primaryColor, borderRadius: siteConfig.borderRadius }}
+                className="w-10 h-10 flex items-center justify-center text-white font-black text-xl italic group-hover:scale-105 transition-transform"
               >
-                <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-                Back to all tools
+                {siteConfig.brandName.charAt(0)}
+              </div>
+            )}
+            <span className={cn("text-2xl font-black text-slate-900 tracking-tight transition-all")} style={{ fontSize: `calc(1.5rem * var(--font-scale))` }}>
+              {siteConfig.brandName}<span style={{ color: siteConfig.primaryColor }} className="italic">{siteConfig.brandAccent}</span>
+            </span>
+          </div>
+          
+          <nav className="hidden md:flex items-center gap-8">
+            {siteConfig.headerButton && (
+              <button 
+                style={{ backgroundColor: siteConfig.primaryColor, borderRadius: siteConfig.borderRadius }}
+                className={cn("px-5 py-2 text-white text-sm font-bold shadow-indigo-100 hover:opacity-90 transition-all active:scale-95", shadowClasses[siteConfig.shadowStrength])}
+              >
+                {siteConfig.headerButton}
               </button>
+            )}
+          </nav>
+        </header>
 
-              <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden min-h-[500px] flex flex-col">
-                <div className={cn("px-8 py-6 flex items-center justify-between text-white", selectedTool?.color)}>
-                  <div>
-                    <h2 className="text-2xl font-bold flex items-center gap-3">
-                      {selectedTool?.icon && <selectedTool.icon size={28} />}
-                      {selectedTool?.name}
-                    </h2>
-                    <p className="opacity-90">{selectedTool?.description}</p>
+        {/* Main Content */}
+        <main className={cn("flex-1 pb-12 overflow-x-hidden", siteConfig.headerSticky ? "pt-32" : "pt-12")}>
+          <AnimatePresence mode="wait">
+            {!activeTool ? (
+              <motion.div 
+                key="dashboard"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="max-w-7xl mx-auto px-8"
+              >
+                <div className="text-center mb-12 relative group">
+                  <h1 
+                    className="font-black text-slate-900 mb-2 tracking-tight transition-all"
+                    style={{ fontSize: `calc(3rem * var(--font-scale))` }}
+                  >
+                    {siteConfig.heroTitle}
+                  </h1>
+                  <p 
+                    className="text-slate-500 font-medium transition-all"
+                    style={{ fontSize: `calc(1.125rem * var(--font-scale))` }}
+                  >
+                    {siteConfig.heroSubtitle}
+                  </p>
+                  <div className="mt-6 flex items-center justify-center gap-3 flex-wrap text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] transition-all">
+                    <span className="inline-flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-indigo-500" />100% Free</span>
+                    <span className="inline-flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-indigo-500" />No Signup Required</span>
+                    <span className="inline-flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-indigo-500" />No GitHub Required</span>
+                    <span className="inline-flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-indigo-500" />Secure & Fast</span>
                   </div>
                 </div>
 
-                <div className="flex-1 p-8 flex flex-col items-center justify-center">
-                  <Workspace toolId={activeTool} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {TOOLS.map((tool) => (
+                    <ToolCard 
+                      key={tool.id} 
+                      tool={tool} 
+                      toolOverride={siteConfig.tools[tool.id]}
+                      onClick={() => setActiveTool(tool.id)}
+                      borderRadius={siteConfig.borderRadius}
+                      shadowWeight={shadowClasses[siteConfig.shadowStrength]}
+                    />
+                  ))}
+                  
+                  {/* Promotional Card */}
+                  <div 
+                    style={{ backgroundColor: siteConfig.primaryColor, borderRadius: siteConfig.borderRadius }}
+                    className={cn("p-5 flex flex-col justify-between text-white transition-transform hover:-translate-y-1 shadow-indigo-100", shadowClasses[siteConfig.shadowStrength])}
+                  >
+                    <div>
+                      <h3 className="font-bold text-xl mb-1">Pro Version</h3>
+                      <p className="text-xs text-white/80 leading-relaxed">Batch processing, OCR, and no file limits.</p>
+                      <ul className="mt-4 space-y-2">
+                        <li className="flex items-center gap-2 text-[10px] font-bold">
+                          <Download size={14} className="opacity-60" />
+                          UNLIMITED FILES
+                        </li>
+                        <li className="flex items-center gap-2 text-[10px] font-bold">
+                          <Lock size={14} className="opacity-60" />
+                          256-BIT ENCRYPTION
+                        </li>
+                      </ul>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        setPremiumComingSoon(true);
+                        setTimeout(() => setPremiumComingSoon(false), 2000);
+                      }}
+                      className="w-full py-2 bg-white text-slate-900 rounded-lg text-sm font-black mt-4 uppercase hover:bg-white/90 transition-colors"
+                    >
+                      {premiumComingSoon ? 'Coming Soon' : 'Go Premium'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="workspace"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                className="max-w-4xl mx-auto px-4"
+              >
+                <button 
+                  onClick={() => setActiveTool(null)}
+                  className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors mb-6 group"
+                >
+                  <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+                  Back to all tools
+                </button>
 
-      {/* Footer */}
-      <footer className="px-8 py-4 bg-white border-t border-indigo-100 flex items-center justify-between">
-        <div className="flex gap-6">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Traffic: 850M+ Monthly</span>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trusted by 10k+ Teams</span>
-        </div>
-        <div className="flex gap-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="w-5 h-5 bg-slate-100 rounded"></div>
-          ))}
-        </div>
-      </footer>
+                <div 
+                  style={{ borderRadius: siteConfig.borderRadius }}
+                  className={cn("bg-white border border-slate-100 overflow-hidden min-h-[500px] flex flex-col", shadowClasses[siteConfig.shadowStrength])}
+                >
+                  <div 
+                    style={{ backgroundColor: toolBaseInfo?.color.includes('bg-') ? undefined : siteConfig.primaryColor }}
+                    className={cn("px-8 py-6 flex items-center justify-between text-white transition-colors duration-500", toolBaseInfo?.color)}
+                  >
+                    <div>
+                      <h2 className="text-2xl font-bold flex items-center gap-3">
+                        {toolBaseInfo?.icon && <toolBaseInfo.icon size={28} />}
+                        {selectedToolData?.name || toolBaseInfo?.name}
+                      </h2>
+                      <p className="opacity-90">{selectedToolData?.description || toolBaseInfo?.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 p-8 flex flex-col items-center justify-center">
+                    <Workspace toolId={activeTool} />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
+
+        {/* Footer */}
+        <footer className="px-8 py-6 bg-white border-t border-indigo-100 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+          <div className="flex flex-col gap-1">
+            <div className="flex gap-6 justify-center md:justify-start">
+              {siteConfig.footerTraffic && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{siteConfig.footerTraffic}</span>}
+              {siteConfig.footerTeams && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{siteConfig.footerTeams}</span>}
+            </div>
+            <p className="text-[10px] font-medium text-slate-400 max-w-md">
+              Powered by <span className="text-brand-600 font-bold">CleverUtils Free API</span> - 1000 free conversions per day! Files auto-deleted after 2 hours.
+            </p>
+          </div>
+          <div className="flex gap-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="w-5 h-5 bg-slate-100 rounded"></div>
+            ))}
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }
 
-function ToolCard({ tool, onClick }: { tool: Tool, onClick: () => void }) {
+const ToolCard: React.FC<{ 
+  tool: Tool; 
+  toolOverride?: { name: string; description: string; stats?: string }; 
+  onClick: () => void; 
+  borderRadius: string; 
+  shadowWeight: string; 
+}> = ({ tool, toolOverride, onClick, borderRadius, shadowWeight }) => {
   return (
     <motion.button
       whileHover={{ y: -4 }}
       onClick={onClick}
-      className={cn("tool-card group", tool.hoverBorder)}
+      style={{ borderRadius }}
+      className={cn(
+        "tool-card group p-5 pt-7 text-left transition-all border border-slate-100 bg-white min-h-[160px] flex flex-col justify-between",
+        tool.hoverBorder,
+        shadowWeight
+      )}
     >
       <div className="w-full">
         <div className="flex justify-between items-start mb-3">
@@ -199,21 +346,6 @@ function ToolCard({ tool, onClick }: { tool: Tool, onClick: () => void }) {
                 🔥 Popular
               </span>
             )}
-            {tool.difficulty === 'easy' && (
-              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded uppercase flex items-center gap-1">
-                ⚡ Easy
-              </span>
-            )}
-            {tool.traffic === 'rising' && (
-              <span className="px-2 py-0.5 bg-sky-100 text-sky-700 text-[10px] font-bold rounded uppercase flex items-center gap-1">
-                ↑ Rising
-              </span>
-            )}
-            {tool.traffic === 'niche' && (
-              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded uppercase flex items-center gap-1">
-                🎯 Niche
-              </span>
-            )}
             {tool.id === 'editor' && (
               <span className="px-2 py-0.5 bg-brand-600 text-white text-[10px] font-bold rounded uppercase flex items-center gap-1">
                 ✦ AI Beta
@@ -222,63 +354,140 @@ function ToolCard({ tool, onClick }: { tool: Tool, onClick: () => void }) {
           </div>
         </div>
         
-        <h3 className="font-bold text-slate-800 text-lg">{tool.name}</h3>
+        <h3 className="font-bold text-slate-800 text-lg">{toolOverride?.name || tool.name}</h3>
         <p className="text-xs text-slate-400 mt-1 leading-relaxed line-clamp-2">
-          {tool.description}
+          {toolOverride?.description || tool.description}
         </p>
       </div>
 
       <div className="text-[11px] font-bold text-slate-400 mt-4 uppercase tracking-tight">
-        {tool.stats || 'FAVORITE TOOL'}
+        {toolOverride?.stats || tool.stats || 'FAVORITE TOOL'}
       </div>
     </motion.button>
   );
 }
 
-import { PDFService } from './services/pdfService';
+import { PDFService, convertWordToPdf, Annotation } from './services/pdfService';
 import { downloadBlob } from './lib/utils';
+import JSZip from 'jszip';
 
-import { GoogleGenAI } from '@google/genai';
+
 
 function Workspace({ toolId }: { toolId: ToolId }) {
   const [files, setFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
-  const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [loadingAi, setLoadingAi] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [options, setOptions] = useState({
     rotation: 90,
     watermark: 'DocuFlow',
+    watermarkType: 'text' as 'text' | 'image',
+    watermarkOpacity: 0.3,
+    watermarkPosition: 'center' as 'center' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'custom',
+    watermarkX: 0,
+    watermarkY: 0,
+    watermarkRotation: 45,
+    watermarkScale: 0.5,
+    watermarkImage: null as string | null,
     password: '',
+    newPassword: '',
     signature: 'Digitally Signed',
+    splitRange: 'all',
+    splitMode: 'split' as 'extract' | 'split',
+    removeWatermarkDeep: false,
+    compressionLevel: 'medium' as 'low' | 'medium' | 'high',
+    annotations: [] as Annotation[],
   });
+
+  const addAnnotation = (type: 'text' | 'image' | 'rect' = 'text') => {
+    const newAnn: Annotation = {
+      type,
+      text: type === 'text' ? 'New Text' : undefined,
+      fontSize: 24,
+      color: type === 'rect' ? '#ffffff' : '#4f46e5',
+      fontStyle: 'bold',
+      x: 50,
+      y: 500,
+      width: type === 'rect' || type === 'image' ? 100 : undefined,
+      height: type === 'rect' || type === 'image' ? 50 : undefined,
+      pageIndex: 0,
+      opacity: 1
+    };
+    setOptions({ ...options, annotations: [...options.annotations, newAnn] });
+  };
+
+  const updateAnnotation = (index: number, updates: Partial<Annotation>) => {
+    const newAnns = [...options.annotations];
+    newAnns[index] = { ...newAnns[index], ...updates };
+    setOptions({ ...options, annotations: newAnns });
+  };
+
+  const removeAnnotation = (index: number) => {
+    setOptions({ ...options, annotations: options.annotations.filter((_, i) => i !== index) });
+  };
+
+  const [previewPage, setPreviewPage] = useState<number>(0);
+  const [pageThumb, setPageThumb] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (toolId === 'editor' && files.length > 0) {
+      const loadThumb = async () => {
+        try {
+          const thumbs = await PDFService.pdfToJpg(files[0], undefined, 1.0, 0.6);
+          if (thumbs[previewPage]) {
+            setPageThumb(thumbs[previewPage]);
+          }
+        } catch (e) {
+          console.error("Thumb load failed", e);
+        }
+      };
+      loadThumb();
+    }
+  }, [toolId, files, previewPage]);
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFiles(Array.from(e.target.files));
-    }
-  };
-
-  const summarizeDocument = async () => {
-    if (files.length === 0) return;
-    setLoadingAi(true);
-    try {
-      const text = await PDFService.extractText(files[0]);
-      const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY!);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-      const prompt = `Summarize the following document content in 3 key bullet points:\n\n${text.substring(0, 5000)}`;
-      const result = await model.generateContent(prompt);
-      setAiSummary(result.response.text());
-    } catch (error) {
-      console.error(error);
-      setAiSummary("Could not generate summary using AI at this time.");
-    } finally {
-      setLoadingAi(false);
+      setResult(null);
     }
   };
 
   const processFile = async () => {
     if (files.length === 0) return;
+
+    // Prerequisite: Input Validation
+    try {
+      if (toolId === 'rotate' && (options.rotation % 90 !== 0 || options.rotation === 0)) {
+        throw new Error("Please select a standard rotation (90, 180, or 270 degrees).");
+      }
+      if (toolId === 'watermark') {
+        if (options.watermarkType === 'text' && options.watermark.trim().length === 0) {
+          throw new Error("Please enter the text you want to use as a watermark.");
+        }
+        if (options.watermarkType === 'image' && !options.watermarkImage) {
+          throw new Error("Please upload an image to use as your watermark.");
+        }
+      }
+      if (toolId === 'split' && !options.splitRange.trim()) {
+        throw new Error("Page range cannot be empty. Use 'all' or specific pages like '1, 2-5'.");
+      }
+      if (toolId === 'sign' && options.signature.trim().length === 0) {
+        throw new Error("Signature text is required to sign the document.");
+      }
+      if (toolId === 'unlock' && !options.password) {
+        throw new Error("Password is required to unlock this document.");
+      }
+      if (toolId === 'lock' && !options.newPassword) {
+        throw new Error("Please set a password to lock this PDF.");
+      }
+      if (toolId === 'editor' && options.annotations.length === 0) {
+        throw new Error("Please add at least one annotation (text, image, or shape) before saving.");
+      }
+    } catch (validationError: any) {
+      setResult(`Setup needed: ${validationError.message}`);
+      return;
+    }
+
     setProcessing(true);
     setResult(null);
 
@@ -294,40 +503,83 @@ function Workspace({ toolId }: { toolId: ToolId }) {
           output = await PDFService.rotatePDF(files[0], options.rotation);
           break;
         case 'watermark':
-          output = await PDFService.addWatermark(files[0], options.watermark);
+          output = await PDFService.addWatermark(
+            files[0], 
+            options.watermark,
+            options.watermarkOpacity,
+            options.watermarkPosition,
+            options.watermarkType,
+            options.watermarkImage,
+            options.watermarkRotation,
+            options.watermarkX,
+            options.watermarkY,
+            options.watermarkScale
+          );
           break;
         case 'compress':
-          output = await PDFService.compressPDF(files[0]);
+          output = await PDFService.compressPDF(files[0], options.compressionLevel);
           break;
-        case 'split':
-          output = await PDFService.splitPDF(files[0]);
-          output = output[0];
-          fileName = `docuflow-page-1.pdf`;
+         case 'split':
+          output = await PDFService.splitPDF(files[0], options.splitRange, options.splitMode);
+          fileName = options.splitMode === 'split' ? `docuflow-split-${files[0].name.replace('.pdf', '')}.zip` : `docuflow-extracted-${files[0].name}`;
           break;
         case 'pdf-to-jpg':
           const images = await PDFService.pdfToJpg(files[0]);
-          const link = document.createElement('a');
-          link.href = images[0];
-          link.download = 'docuflow-page-1.jpg';
-          link.click();
-          setResult(`Converted ${images.length} pages to JPG! Downloaded page 1.`);
+          if (images.length === 1) {
+            const link = document.createElement('a');
+            link.href = images[0];
+            link.download = 'docuflow-page-1.jpg';
+            link.click();
+            setResult(`Converted 1 page to JPG!`);
+          } else {
+            const zip = new JSZip();
+            images.forEach((img, idx) => {
+              const base64Data = img.split(',')[1];
+              zip.file(`page-${idx + 1}.jpg`, base64Data, { base64: true });
+            });
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            downloadBlob(zipBlob, `docuflow-images-${files[0].name.replace('.pdf', '')}.zip`);
+            setResult(`Converted ${images.length} pages to JPG! Downloaded as .zip.`);
+          }
+          setProcessing(false);
           return;
         case 'sign':
           output = await PDFService.signPDF(files[0], options.signature);
           break;
         case 'pdf-to-word':
-          const text = await PDFService.extractText(files[0]);
-          const textBlob = new Blob([text], { type: 'text/plain' });
-          const textUrl = URL.createObjectURL(textBlob);
-          const textLink = document.createElement('a');
-          textLink.href = textUrl;
-          textLink.download = 'docuflow-extracted-text.txt';
-          textLink.click();
-          setResult("Extracted text successfully! Downloaded as .txt.");
+          output = await PDFService.convertToWord(files[0]);
+          fileName = files[0].name.replace(/\.[^/.]+$/, "") + ".docx";
+          downloadBlob(output as Blob, fileName);
+          setResult("Converted PDF to Word successfully! Downloaded as .docx.");
+          setProcessing(false);
           return;
+        case 'word-to-pdf':
+          output = await convertWordToPdf(files[0]);
+          fileName = files[0].name.replace(/\.[^/.]+$/, "") + ".pdf";
+          break;
+        case 'editor':
+          output = await PDFService.editPDF(files[0], undefined, options.annotations);
+          break;
         case 'unlock':
           output = await PDFService.removePassword(files[0], options.password);
           break;
+        case 'lock':
+          output = await PDFService.lockPDF(files[0], options.newPassword);
+          break;
+        case 'remove-watermark':
+          output = await PDFService.removeWatermark(files[0], options.removeWatermarkDeep);
+          break;
+        case 'pdf-to-text':
+          const text = await PDFService.extractText(files[0]);
+          if (!text || text.trim().length < 2) {
+            throw new Error("We couldn't extract any text from this PDF. It might be an empty document or have structural issues. If it's a scanned document, our OCR might have failed to recognize the characters.");
+          }
+          output = new Blob([text], { type: 'text/plain' });
+          fileName = files[0].name.replace(/\.[^/.]+$/, "") + ".txt";
+          downloadBlob(output as Blob, fileName);
+          setResult("Extracted text successfully! Powered by CleverUtils Free API.");
+          setProcessing(false);
+          return;
         default:
           throw new Error('This tool is currently in maintenance or coming soon!');
       }
@@ -337,13 +589,27 @@ function Workspace({ toolId }: { toolId: ToolId }) {
       setResult("Successfully processed! Your download should have started.");
     } catch (error: any) {
       console.error(error);
-      setResult(`Error: ${error.message || 'Something went wrong.'}`);
+      let userMessage = error.message || 'Something went wrong.';
+      
+      // Proactive error messaging as requested
+      if (userMessage.includes('Missing or insufficient permissions')) {
+        userMessage = "Access denied: The server refused the request. Please try again later.";
+      } else if (userMessage.includes('Quota exceeded') || userMessage.includes('429')) {
+        userMessage = "Service limit reached: The free extraction API is currently busy or at capacity. Please try again in a few minutes or with a smaller file.";
+      } else if (userMessage.includes('password') || userMessage.includes('encrypted')) {
+        userMessage = "Protected File: This PDF is encrypted. Use our 'Unlock PDF' tool to remove the password before processing.";
+      } else if (userMessage.includes('fetch') || userMessage.includes('network')) {
+        userMessage = "Network error: Connection to our processing server failed. Please check your internet or try again later.";
+      }
+      
+      setResult(`Unable to process: ${userMessage}`);
     } finally {
       setProcessing(false);
     }
   };
 
   const isMultiFile = toolId === 'merge';
+  const acceptedTypes = toolId === 'word-to-pdf' ? '.docx' : '.pdf';
 
   return (
     <div className="w-full max-w-lg mx-auto">
@@ -354,12 +620,12 @@ function Workspace({ toolId }: { toolId: ToolId }) {
               <Upload size={32} />
             </div>
             <p className="mb-2 text-lg font-medium text-slate-700">Choose {isMultiFile ? 'Files' : 'File'}</p>
-            <p className="text-sm text-slate-500">or drop PDF here</p>
+            <p className="text-sm text-slate-500">or drop {toolId === 'word-to-pdf' ? 'DOCX' : 'PDF'} here</p>
           </div>
           <input 
             type="file" 
             className="hidden" 
-            accept=".pdf" 
+            accept={acceptedTypes} 
             multiple={isMultiFile}
             onChange={onFileChange} 
           />
@@ -378,6 +644,46 @@ function Workspace({ toolId }: { toolId: ToolId }) {
 
           {/* Tool specific options */}
           <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 grid grid-cols-1 gap-4">
+            {toolId === 'compress' && (
+              <div className="space-y-4">
+                <label className="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wider">Compression Level</label>
+                <div className="flex flex-col gap-2">
+                  {[
+                    { id: 'low' as const, label: 'Low Compression', desc: 'Slight reduction, high fidelity' },
+                    { id: 'medium' as const, label: 'Recommended', desc: 'Best balance of size vs quality' },
+                    { id: 'high' as const, label: 'Extreme (Lossy)', desc: 'Smallest size, flattens PDF' }
+                  ].map(level => (
+                    <button 
+                      key={level.id}
+                      onClick={() => setOptions({ ...options, compressionLevel: level.id })}
+                      className={cn(
+                        "w-full p-4 rounded-xl text-left transition-all border flex items-center justify-between",
+                        options.compressionLevel === level.id 
+                          ? "bg-brand-600 border-brand-600 text-white shadow-md ring-2 ring-brand-100" 
+                          : "bg-white border-slate-200 text-slate-600 hover:border-brand-300"
+                      )}
+                    >
+                      <div>
+                        <div className="text-sm font-bold">{level.label}</div>
+                        <div className={cn("text-[10px] opacity-80", options.compressionLevel === level.id ? "text-white" : "text-slate-400")}>{level.desc}</div>
+                      </div>
+                      {options.compressionLevel === level.id && (
+                        <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                          <Download size={14} className="text-white" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {options.compressionLevel === 'high' && (
+                  <div className="p-3 bg-orange-50 text-orange-700 rounded-xl border border-orange-100 text-[10px] flex gap-2">
+                    <AlertCircle size={14} className="shrink-0" />
+                    <span>Extreme compression flattens the PDF into images. This results in the smallest file size but text will no longer be selectable.</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {toolId === 'rotate' && (
               <div>
                 <label className="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wider">Rotation Angle</label>
@@ -399,38 +705,453 @@ function Workspace({ toolId }: { toolId: ToolId }) {
             )}
             
             {toolId === 'editor' && (
-              <div className="space-y-4">
-                <label className="text-xs font-bold text-slate-400 uppercase block tracking-wider">AI Document Intelligence</label>
-                {!aiSummary ? (
-                  <button 
-                    onClick={summarizeDocument}
-                    disabled={loadingAi}
-                    className="w-full py-2 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-emerald-200 transition-colors"
-                  >
-                    {loadingAi ? 'Analyzing...' : 'Summarize with AI'}
-                  </button>
-                ) : (
-                  <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100 text-sm text-emerald-800 animate-in fade-in slide-in-from-top-1">
-                    <p className="font-bold mb-2 flex items-center gap-2">
-                       <Type size={14} /> AI Summary:
-                    </p>
-                    <div className="whitespace-pre-wrap">{aiSummary}</div>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left Column: Controls */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-400 uppercase block tracking-wider">Edits & Overlays</label>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => addAnnotation('text')}
+                          className="p-1 px-2 bg-brand-600 text-white rounded-lg text-[9px] font-black uppercase flex items-center gap-1 hover:bg-brand-700 transition-colors shadow-sm"
+                        >
+                          <Plus size={10} /> Text
+                        </button>
+                        <button 
+                          onClick={() => addAnnotation('image')}
+                          className="p-1 px-2 bg-emerald-600 text-white rounded-lg text-[9px] font-black uppercase flex items-center gap-1 hover:bg-emerald-700 transition-colors shadow-sm"
+                        >
+                          <Plus size={10} /> Image
+                        </button>
+                        <button 
+                          onClick={() => addAnnotation('rect')}
+                          className="p-1 px-2 bg-slate-800 text-white rounded-lg text-[9px] font-black uppercase flex items-center gap-1 hover:bg-slate-900 transition-colors shadow-sm"
+                        >
+                          <Plus size={10} /> White-out
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                      {options.annotations.length === 0 ? (
+                        <div className="text-center py-12 bg-slate-100/50 rounded-xl border border-dashed border-slate-200 text-slate-400 text-[11px] flex flex-col items-center gap-2">
+                          < PenTool size={24} className="opacity-20" />
+                          <span>No edits added yet.<br/>Use buttons above to add text, images, or boxes.</span>
+                        </div>
+                      ) : (
+                        options.annotations.map((ann, idx) => (
+                          <div key={idx} className="p-4 bg-white rounded-xl border border-slate-200 space-y-3 shadow-sm hover:border-brand-200 transition-colors relative group">
+                            <div className="flex gap-2">
+                               {ann.type === 'text' && (
+                                 <div className="flex-1 space-y-1">
+                                  <input 
+                                    value={ann.text}
+                                    onChange={(e) => updateAnnotation(idx, { text: e.target.value })}
+                                    className="w-full text-sm font-bold text-slate-800 border-none p-0 focus:ring-0 placeholder:text-slate-300"
+                                    placeholder="Enter text..."
+                                  />
+                                </div>
+                               )}
+                               {ann.type === 'image' && (
+                                 <div className="flex-1 space-y-2">
+                                   <div 
+                                    onClick={() => document.getElementById(`ann-img-${idx}`)?.click()}
+                                    className="w-full h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-lg flex items-center justify-center cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition-all"
+                                   >
+                                     {ann.image ? (
+                                       <img src={ann.image} className="h-full object-contain p-1" alt="Embed" />
+                                     ) : (
+                                       <div className="flex flex-col items-center gap-1">
+                                          <ImageIcon size={16} className="text-slate-300" />
+                                          <span className="text-[9px] font-bold text-slate-400 uppercase">Upload Image</span>
+                                       </div>
+                                     )}
+                                   </div>
+                                   <input 
+                                    id={`ann-img-${idx}`}
+                                    type="file" 
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const reader = new FileReader();
+                                        reader.onload = (ev) => updateAnnotation(idx, { image: ev.target?.result as string });
+                                        reader.readAsDataURL(file);
+                                      }
+                                    }}
+                                  />
+                                 </div>
+                               )}
+                               {ann.type === 'rect' && (
+                                 <div className="flex-1 flex items-center gap-2">
+                                   <Square size={14} className="text-slate-400" />
+                                   <span className="text-[10px] font-bold text-slate-500 uppercase">Shape Overlay / Box</span>
+                                 </div>
+                               )}
+                              <button 
+                                onClick={() => removeAnnotation(idx)}
+                                className="text-slate-300 hover:text-red-500 transition-colors"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-100">
+                                <Palette size={12} className="text-slate-400" />
+                                <input 
+                                  type="color"
+                                  value={ann.color}
+                                  onChange={(e) => updateAnnotation(idx, { color: e.target.value })}
+                                  className="w-6 h-6 rounded-md border-none p-0 bg-transparent cursor-pointer"
+                                />
+                                <span className="text-[10px] font-bold text-slate-500 uppercase">{ann.color}</span>
+                              </div>
+                              
+                              {ann.type === 'text' && (
+                                <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-100">
+                                  <TypeIcon size={12} className="text-slate-400" />
+                                  <select 
+                                    value={ann.fontSize}
+                                    onChange={(e) => updateAnnotation(idx, { fontSize: parseInt(e.target.value) })}
+                                    className="bg-transparent border-none p-0 text-[10px] font-bold text-slate-600 focus:ring-0 w-full"
+                                  >
+                                    {[8, 10, 12, 14, 16, 18, 20, 24, 32, 48, 64].map(size => (
+                                      <option key={size} value={size}>{size}px</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
+                              {(ann.type === 'rect' || ann.type === 'image') && (
+                                <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-100">
+                                  <Maximize size={12} className="text-slate-400" />
+                                  <div className="flex gap-1">
+                                    <input 
+                                      type="number"
+                                      value={ann.width}
+                                      onChange={(e) => updateAnnotation(idx, { width: parseInt(e.target.value) })}
+                                      className="w-8 bg-transparent border-none p-0 text-[10px] font-bold text-slate-600 focus:ring-0"
+                                    />
+                                    <span className="text-[10px] text-slate-300">×</span>
+                                    <input 
+                                      type="number"
+                                      value={ann.height}
+                                      onChange={(e) => updateAnnotation(idx, { height: parseInt(e.target.value) })}
+                                      className="w-8 bg-transparent border-none p-0 text-[10px] font-bold text-slate-600 focus:ring-0"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 bg-slate-50 p-2 rounded-lg">
+                              <div className="flex items-center gap-1.5">
+                                <Move size={12} />
+                                <span>X:</span>
+                                <input 
+                                  type="number"
+                                  value={ann.x}
+                                  onChange={(e) => updateAnnotation(idx, { x: parseInt(e.target.value) })}
+                                  className="w-10 bg-transparent border-none p-0 text-slate-700 focus:ring-0"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Move size={12} className="rotate-90" />
+                                <span>Y:</span>
+                                <input 
+                                  type="number"
+                                  value={ann.y}
+                                  onChange={(e) => updateAnnotation(idx, { y: parseInt(e.target.value) })}
+                                  className="w-10 bg-transparent border-none p-0 text-slate-700 focus:ring-0"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1.5 ml-auto">
+                                <span>Page:</span>
+                                <input 
+                                  type="number"
+                                  min="1"
+                                  value={ann.pageIndex + 1}
+                                  onChange={(e) => {
+                                    const val = Math.max(0, parseInt(e.target.value) - 1);
+                                    updateAnnotation(idx, { pageIndex: val });
+                                    setPreviewPage(val);
+                                  }}
+                                  className="w-8 bg-transparent border-none p-0 text-slate-700 focus:ring-0 text-center"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
-                )}
-                <p className="text-[10px] text-slate-400 italic">Full editing tools are coming soon. Use AI to understand your document instantly.</p>
+
+                  {/* Right Column: Preview */}
+                  <div className="space-y-4">
+                    <label className="text-xs font-bold text-slate-400 uppercase block tracking-wider">Visual Guide (Page {previewPage+1})</label>
+                    <div className="relative aspect-[1/1.4] bg-slate-200 rounded-2xl overflow-hidden border border-slate-300 shadow-inner group">
+                      {pageThumb ? (
+                        <div className="w-full h-full relative">
+                          <img src={pageThumb} className="w-full h-full object-contain" alt="Page preview" />
+                          <div className="absolute inset-0 pointer-events-none">
+                            {options.annotations.filter(a => a.pageIndex === previewPage).map((ann, i) => (
+                              <div 
+                                key={i}
+                                className="absolute border border-brand-500 bg-brand-500/20 text-[6px] text-brand-600 flex items-center justify-center font-bold"
+                                style={{ 
+                                  // Simplified mapping from PDF pts to percentage. 
+                                  // Standard A4 is 595x842 pts.
+                                  left: `${(ann.x / 595) * 100}%`,
+                                  bottom: `${(ann.y / 842) * 100}%`,
+                                  width: ann.type === 'text' ? 'auto' : `${((ann.width || 50) / 595) * 100}%`,
+                                  height: ann.type === 'text' ? 'auto' : `${((ann.height || 20) / 842) * 100}%`,
+                                  minWidth: '4px',
+                                  minHeight: '4px',
+                                  transform: 'translateY(100%)' // PDF (0,0) is bottom-left, CSS is top-left.
+                                }}
+                              >
+                                {ann.type === 'text' ? ann.text?.slice(0, 5) : ann.type}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                          <div className="animate-spin w-8 h-8 border-4 border-slate-300 border-t-brand-500 rounded-full mb-4" />
+                          <p className="text-xs font-bold">Rendering Preview...</p>
+                        </div>
+                      )}
+                      
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/90 backdrop-blur p-1 rounded-lg border border-slate-200 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => setPreviewPage(Math.max(0, previewPage - 1))}
+                          disabled={previewPage === 0}
+                          className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"
+                        >
+                          <ChevronLeft size={16} />
+                        </button>
+                        <span className="text-[10px] font-bold px-2">Page {previewPage + 1}</span>
+                        <button 
+                          onClick={() => setPreviewPage(previewPage + 1)}
+                          className="p-1 hover:bg-slate-100 rounded"
+                        >
+                          <ChevronLeft size={16} className="rotate-180" />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-slate-400 text-center leading-relaxed">
+                      Coordinates are in points (pt). Page bottom-left is (0,0).<br/>
+                      A standard A4 page is approx 595 x 842 pts.
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-slate-400 italic bg-brand-50 p-3 rounded-xl border border-brand-100">
+                  <span className="font-bold text-brand-600 block mb-1">Editor Notice:</span>
+                  Edits are layered on top of the original PDF. Text in rectangles or under images may still be "present" in the data, but obscured visually.
+                </p>
               </div>
             )}
             
+            {toolId === 'split' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wider">Split Mode</label>
+                  <div className="flex gap-2">
+                    {[
+                      { id: 'split' as const, label: 'Split All', desc: 'Separate PDFs for all pages' },
+                      { id: 'extract' as const, label: 'Extract Range', desc: 'One PDF with specific pages' }
+                    ].map(mode => (
+                      <button 
+                        key={mode.id}
+                        onClick={() => setOptions({ ...options, splitMode: mode.id })}
+                        className={cn(
+                          "flex-1 p-3 rounded-xl text-left transition-all border",
+                          options.splitMode === mode.id 
+                            ? "bg-brand-600 border-brand-600 text-white shadow-md ring-2 ring-brand-100" 
+                            : "bg-white border-slate-200 text-slate-600 hover:border-brand-300"
+                        )}
+                      >
+                        <div className="text-sm font-bold">{mode.label}</div>
+                        <div className={cn("text-[10px] opacity-80", options.splitMode === mode.id ? "text-white" : "text-slate-400")}>{mode.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase block tracking-wider">Page Range</label>
+                    <span className="text-[10px] text-slate-400">e.g. 1, 3-5 or 'all'</span>
+                  </div>
+                  <input 
+                    type="text"
+                    value={options.splitRange}
+                    onChange={(e) => setOptions({ ...options, splitRange: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    placeholder="all, 1, 2-5..."
+                  />
+                </div>
+              </div>
+            )}
+
             {toolId === 'watermark' && (
-              <div>
-                <label className="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wider">Watermark Text</label>
-                <input 
-                  type="text"
-                  value={options.watermark}
-                  onChange={(e) => setOptions({ ...options, watermark: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  placeholder="Enter text..."
-                />
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wider">Watermark Type</label>
+                  <div className="flex gap-2">
+                    {[
+                      { id: 'text', label: 'Text', icon: TypeIcon },
+                      { id: 'image', label: 'Image', icon: ImageIcon }
+                    ].map(type => (
+                      <button 
+                        key={type.id}
+                        onClick={() => setOptions({ ...options, watermarkType: type.id as any })}
+                        className={cn(
+                          "flex-1 p-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 border transition-all",
+                          options.watermarkType === type.id 
+                            ? "bg-brand-50 border-brand-200 text-brand-700 ring-1 ring-brand-200" 
+                            : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                        )}
+                      >
+                        <type.icon size={14} />
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {options.watermarkType === 'text' ? (
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wider">Watermark Text</label>
+                    <input 
+                      type="text"
+                      value={options.watermark}
+                      onChange={(e) => setOptions({ ...options, watermark: e.target.value })}
+                      className="w-full px-4 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      placeholder="Enter text..."
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wider">Watermark Image</label>
+                    <div 
+                      onClick={() => document.getElementById('watermark-img-upload')?.click()}
+                      className="w-full p-4 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-brand-400 transition-colors flex flex-col items-center justify-center gap-2"
+                    >
+                      {options.watermarkImage ? (
+                        <img src={options.watermarkImage} className="h-12 object-contain" alt="Watermark preview" />
+                      ) : (
+                        <>
+                          <ImageIcon className="text-slate-300" size={24} />
+                          <span className="text-[10px] text-slate-400">Click to upload image</span>
+                        </>
+                      )}
+                    </div>
+                    <input 
+                      id="watermark-img-upload"
+                      type="file" 
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => setOptions({ ...options, watermarkImage: ev.target?.result as string });
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wider">Opacity ({Math.round(options.watermarkOpacity * 100)}%)</label>
+                    <input 
+                      type="range"
+                      min="0.05"
+                      max="1"
+                      step="0.05"
+                      value={options.watermarkOpacity}
+                      onChange={(e) => setOptions({ ...options, watermarkOpacity: parseFloat(e.target.value) })}
+                      className="w-full accent-brand-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wider">Position</label>
+                    <select 
+                      value={options.watermarkPosition}
+                      onChange={(e) => setOptions({ ...options, watermarkPosition: e.target.value as any })}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    >
+                      <option value="center">Center</option>
+                      <option value="top">Top</option>
+                      <option value="bottom">Bottom</option>
+                      <option value="top-left">Top Left</option>
+                      <option value="top-right">Top Right</option>
+                      <option value="bottom-left">Bottom Left</option>
+                      <option value="bottom-right">Bottom Right</option>
+                      <option value="custom">Custom (X/Y)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wider text-left">Rotation ({options.watermarkRotation}°)</label>
+                    <input 
+                      type="range"
+                      min="-180"
+                      max="180"
+                      step="5"
+                      value={options.watermarkRotation}
+                      onChange={(e) => setOptions({ ...options, watermarkRotation: parseInt(e.target.value) })}
+                      className="w-full accent-brand-600"
+                    />
+                  </div>
+                  {options.watermarkType === 'image' && (
+                    <div>
+                      <label className="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wider text-left">Scale ({Math.round(options.watermarkScale * 100)}%)</label>
+                      <input 
+                        type="range"
+                        min="0.1"
+                        max="2"
+                        step="0.05"
+                        value={options.watermarkScale}
+                        onChange={(e) => setOptions({ ...options, watermarkScale: parseFloat(e.target.value) })}
+                        className="w-full accent-brand-600"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {options.watermarkPosition === 'custom' && (
+                  <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                    <div>
+                      <label className="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wider text-left">X Coordinate (pt)</label>
+                      <input 
+                        type="number"
+                        value={options.watermarkX}
+                        onChange={(e) => setOptions({ ...options, watermarkX: parseInt(e.target.value) || 0 })}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wider text-left">Y Coordinate (pt)</label>
+                      <input 
+                        type="number"
+                        value={options.watermarkY}
+                        onChange={(e) => setOptions({ ...options, watermarkY: parseInt(e.target.value) || 0 })}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -457,6 +1178,49 @@ function Workspace({ toolId }: { toolId: ToolId }) {
                   className="w-full px-4 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   placeholder="Enter original password"
                 />
+              </div>
+            )}
+
+            {toolId === 'lock' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wider">Set New PDF Password</label>
+                  <input 
+                    type="password"
+                    value={options.newPassword}
+                    onChange={(e) => setOptions({ ...options, newPassword: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    placeholder="Enter secure password"
+                  />
+                </div>
+                <div className="p-3 bg-amber-50 text-amber-700 rounded-xl border border-amber-100 text-[10px]">
+                  <p className="font-bold mb-1 italic flex items-center gap-1">
+                    <AlertCircle size={12} /> Note on Security:
+                  </p>
+                  <p>To ensure robust client-side encryption, the PDF will be protected as a set of high-resolution images. Original text selection may be limited, but your content will be securely locked.</p>
+                </div>
+              </div>
+            )}
+
+            {toolId === 'remove-watermark' && (
+              <div className="space-y-4">
+                <div className="p-4 bg-sky-50 text-sky-700 rounded-xl border border-sky-100 text-xs">
+                  <p className="font-bold mb-1">How it works:</p>
+                  <p>We analyze the document structure and attempt to identify and remove common watermark patterns, transparent layers, and low-opacity stamps.</p>
+                </div>
+                
+                <label className="flex items-center gap-3 p-4 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 transition-all">
+                  <input 
+                    type="checkbox"
+                    checked={options.removeWatermarkDeep}
+                    onChange={(e) => setOptions({...options, removeWatermarkDeep: e.target.checked})}
+                    className="w-5 h-5 accent-brand-600 rounded"
+                  />
+                  <div>
+                    <span className="text-sm font-bold text-slate-700 block">Deep Clean (Aggressive)</span>
+                    <span className="text-[10px] text-slate-400">Try this if standard removal fails. Note: Flattens the PDF.</span>
+                  </div>
+                </label>
               </div>
             )}
           </div>
@@ -521,7 +1285,7 @@ function Workspace({ toolId }: { toolId: ToolId }) {
           </div>
           <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 p-2 rounded-lg">
             <AlertCircle size={14} className="text-brand-500" />
-            <span>Files auto-deleted</span>
+            <span>Deleted after 2 hours</span>
           </div>
         </div>
       </div>
